@@ -8,6 +8,7 @@ import { getPluginToolMeta } from "../plugins/tools.js";
 import { isSubagentSessionKey } from "../routing/session-key.js";
 import { resolveGatewayMessageChannel } from "../utils/message-channel.js";
 import { resolveAgentConfig } from "./agent-scope.js";
+import { createKnowledgeSearchTool } from "./knowledge-search-tool.js";
 import { createApplyPatchTool } from "./apply-patch.js";
 import {
   createExecTool,
@@ -624,5 +625,12 @@ export function createOpenClawCodingTools(options?: {
   // NOTE: Keep canonical (lowercase) tool names here.
   // pi-ai's Anthropic OAuth transport remaps tool names to Claude Code-style names
   // on the wire and maps them back for tool dispatch.
-  return withAbort;
+  const withKnowledgeSearch = options?.disableTools
+    ? withAbort
+    : (() => {
+        const knowledgeTool = createKnowledgeSearchTool({ enabled: true });
+        if (!knowledgeTool) return withAbort;
+        return [...withAbort, knowledgeTool as unknown as AnyAgentTool];
+      })();
+  return withKnowledgeSearch;
 }
