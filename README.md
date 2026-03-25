@@ -47,18 +47,30 @@ Model note: while many providers/models are supported, for the best experience a
 - Models config + CLI: [Models](https://docs.openclaw.ai/concepts/models)
 - Auth profile rotation (OAuth vs API keys) + fallbacks: [Model failover](https://docs.openclaw.ai/concepts/model-failover)
 
-## Install (recommended)
+## Install (one-click)
 
 Runtime: **Node 24 (recommended) or Node 22.16+**.
 
-```bash
-npm install -g openclaw@latest
-# or: pnpm add -g openclaw@latest
+This is a **fork** of OpenClaw with the Dynamic Prompt System and other enhancements. The official npm package (`npm install -g openclaw@latest`) will NOT include these changes. Use the install script below instead.
 
-openclaw onboard --install-daemon
+```bash
+# One-click install (clone + build + verify)
+bash <(curl -fsSL https://raw.githubusercontent.com/youngfun-520/openclaw--/main/install-fork.sh)
 ```
 
-OpenClaw Onboard installs the Gateway daemon (launchd/systemd user service) so it stays running.
+Options:
+```bash
+bash install-fork.sh --branch main --dir ~/openclaw-- --link --verbose
+```
+| Flag | Description |
+|------|-------------|
+| `--branch <name>` | Git branch to clone (default: `main`) |
+| `--dir <path>` | Installation directory (default: `~/openclaw--`) |
+| `--link` | Create global `openclaw` symlink after build |
+| `--skip-build` | Skip build step (if already built) |
+| `--verbose` | Show all output |
+
+The script checks Node.js version, clones the repo, installs dependencies, builds the project, and verifies the installation. On subsequent runs it updates the existing checkout via `git pull`.
 
 ## Quick start (TL;DR)
 
@@ -89,17 +101,20 @@ Upgrading? [Updating guide](https://docs.openclaw.ai/install/updating) (and run 
 Switch channels (git + npm): `openclaw update --channel stable|beta|dev`.
 Details: [Development channels](https://docs.openclaw.ai/install/development-channels).
 
-## From source (development)
+## From source (manual)
 
 Prefer `pnpm` for builds from source. Bun is optional for running TypeScript directly.
 
 ```bash
-git clone https://github.com/openclaw/openclaw.git
-cd openclaw
+git clone https://github.com/youngfun-520/openclaw--.git
+cd openclaw--
 
 pnpm install
 pnpm ui:build # auto-installs UI deps on first run
 pnpm build
+
+# Optional: create global command
+npm link   # or: pnpm link --global
 
 pnpm openclaw onboard --install-daemon
 
