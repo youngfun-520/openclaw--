@@ -944,6 +944,17 @@ export const OpenClawSchema = z
       })
       .strict()
       .optional(),
+    features: z
+      .object({
+        dynamicPrompt: z
+          .object({
+            enabled: z.boolean().optional(),
+          })
+          .strict()
+          .optional(),
+      })
+      .strict()
+      .optional(),
   })
   .strict()
   .superRefine((cfg, ctx) => {
