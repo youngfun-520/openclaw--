@@ -34,7 +34,7 @@ function assert(name: string, condition: boolean, detail?: string) {
 console.log("\n=== 1. Intent Classifier ===");
 
 const testCases: [string, string, number][] = [
-  ["帮我设置每天早上9点的提醒", "generic_task", 90],
+  // English
   ["read the file config.json", "file_read", 85],
   ["create a file called hello.py", "file_write", 85],
   ["search for all TODO comments in this project", "web_search", 85],
@@ -42,13 +42,28 @@ const testCases: [string, string, number][] = [
   ["run npm install", "shell_exec", 90],
   ["what time is it in Tokyo", "generic_task", 70],
   ["set a reminder for tomorrow", "cron", 80],
-  ["你好", "greeting", 100],
   ["thanks for your help", "generic_task", 100],
   ["show me the weather", "file_read", 60],
   ["grep for error patterns in logs", "generic_task", 90],
   ["execute ls -la", "shell_exec", 90],
   ["rename file.txt to backup.txt", "file_edit", 80],
   ["open the browser and go to google.com", "browser", 80],
+  // Chinese
+  ["帮我设置每天早上9点的提醒", "cron", 90],
+  ["读取配置文件", "file_read", 85],
+  ["创建一个新文件", "file_write", 85],
+  ["修改这个文件的内容", "file_edit", 80],
+  ["运行 npm install", "shell_exec", 90],
+  ["安装依赖包", "shell_exec", 70],
+  ["搜索关于人工智能的信息", "web_search", 60],
+  ["打开浏览器", "browser", 75],
+  ["发送消息给某人", "message", 70],
+  ["截图当前屏幕", "browser", 75],
+  ["生成一张图片", "image_generate", 75],
+  ["查看当前状态", "session", 65],
+  ["重启网关", "gateway", 65],
+  ["你能做什么", "knowledge", 50],
+  ["画一个折线图", "canvas", 75],
 ];
 
 for (const [msg, expectedIntent] of testCases) {
@@ -61,8 +76,12 @@ for (const [msg, expectedIntent] of testCases) {
 }
 
 assert("isSimpleConversation('hello')", isSimpleConversation("hello") === true);
+assert("isSimpleConversation('你好')", isSimpleConversation("你好") === true);
+assert("isSimpleConversation('谢谢')", isSimpleConversation("谢谢") === true);
+assert("isSimpleConversation('好的')", isSimpleConversation("好的") === true);
+assert("isSimpleConversation('晚安')", isSimpleConversation("晚安") === true);
+assert("isSimpleConversation('没问题')", isSimpleConversation("没问题") === true);
 assert("isSimpleConversation('帮我写代码')", isSimpleConversation("帮我写代码") === false);
-assert("isSimpleConversation('谢谢')", isSimpleConversation("谢谢") === false);
 assert("isSimpleConversation('goodbye')", isSimpleConversation("goodbye") === true);
 
 // ────────────────────────────────────────────────────────
