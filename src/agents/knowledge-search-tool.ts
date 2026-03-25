@@ -173,10 +173,10 @@ export function createKnowledgeSearchTool(
     execute: async (
       _toolCallId: string,
       args: Record<string, unknown>,
-    ): Promise<string> => {
+    ) => {
       const query = String(args.query ?? "").trim();
       if (!query) {
-        return JSON.stringify({ error: "query is required" });
+        return { content: [{ type: "text" as const, text: JSON.stringify({ error: "query is required" }) }], details: undefined };
       }
 
       const result = executeKnowledgeSearch({
@@ -184,7 +184,7 @@ export function createKnowledgeSearchTool(
         category: args.category ? String(args.category) : undefined,
       });
 
-      return JSON.stringify(result);
+      return { content: [{ type: "text" as const, text: JSON.stringify(result) }], details: undefined };
     },
   };
 }
