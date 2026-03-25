@@ -170,7 +170,10 @@ export function createKnowledgeSearchTool(
     name: TOOL_NAME,
     description: TOOL_DESCRIPTION,
     parameters: TOOL_PARAMETERS,
-    execute: async (args: Record<string, unknown>): Promise<string> => {
+    execute: async (
+      _toolCallId: string,
+      args: Record<string, unknown>,
+    ): Promise<string> => {
       const query = String(args.query ?? "").trim();
       if (!query) {
         return JSON.stringify({ error: "query is required" });

@@ -122,6 +122,9 @@ export type OpenClawConfig = {
   gateway?: GatewayConfig;
   memory?: MemoryConfig;
   mcp?: McpConfig;
+  features?: {
+    dynamicPrompt?: { enabled?: boolean };
+  };
 };
 
 export type ConfigValidationIssue = {

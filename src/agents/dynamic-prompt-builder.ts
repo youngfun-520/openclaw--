@@ -197,7 +197,6 @@ export function buildDynamicSystemPrompt(options: DynamicPromptOptions): string 
   // ── Memory section ──
   if (availableTools.size > 0) {
     const memorySection = buildMemoryPromptSection({
-      isMinimal: false,
       availableTools,
       citationsMode: memoryCitationsMode,
     });

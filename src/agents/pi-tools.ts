@@ -625,9 +625,7 @@ export function createOpenClawCodingTools(options?: {
   // NOTE: Keep canonical (lowercase) tool names here.
   // pi-ai's Anthropic OAuth transport remaps tool names to Claude Code-style names
   // on the wire and maps them back for tool dispatch.
-  const withKnowledgeSearch = options?.disableTools
-    ? withAbort
-    : (() => {
+  const withKnowledgeSearch = (() => {
         const knowledgeTool = createKnowledgeSearchTool({ enabled: true });
         if (!knowledgeTool) return withAbort;
         return [...withAbort, knowledgeTool as unknown as AnyAgentTool];

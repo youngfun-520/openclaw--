@@ -241,7 +241,7 @@ export function persistKnowledgeToDb(
        embedding = excluded.embedding`,
   );
 
-  const insertMany = db.transaction((chunks: KnowledgeChunk[]) => {
+  const insertMany = (db as any).transaction((chunks: KnowledgeChunk[]) => {
     for (const chunk of chunks) {
       const embeddingBlob = chunk.embedding
         ? Buffer.from(new Float32Array(chunk.embedding).buffer)
