@@ -131,8 +131,42 @@ Run `openclaw doctor` to surface risky/misconfigured DM policies.
 - **[Voice Wake](https://docs.openclaw.ai/nodes/voicewake) + [Talk Mode](https://docs.openclaw.ai/nodes/talk)** — wake words on macOS/iOS and continuous voice on Android (ElevenLabs + system TTS fallback).
 - **[Live Canvas](https://docs.openclaw.ai/platforms/mac/canvas)** — agent-driven visual workspace with [A2UI](https://docs.openclaw.ai/platforms/mac/canvas#canvas-a2ui).
 - **[First-class tools](https://docs.openclaw.ai/tools)** — browser, canvas, nodes, cron, sessions, and Discord/Slack actions.
+- **[Dynamic prompt system](#dynamic-prompt-system)** — intent-classified, vector-retrieved on-demand system prompts with ~70% token reduction.
 - **[Companion apps](https://docs.openclaw.ai/platforms/macos)** — macOS menu bar app + iOS/Android [nodes](https://docs.openclaw.ai/nodes).
 - **[Onboarding](https://docs.openclaw.ai/start/wizard) + [skills](https://docs.openclaw.ai/tools/skills)** — onboarding-driven setup with bundled/managed/workspace skills.
+
+## Dynamic Prompt System
+
+Reduces system prompt token consumption by ~70% through intent classification, on-demand knowledge retrieval, and lazy tool schema loading.
+
+**Architecture:**
+1. **Intent Classifier** ("src/agents/intent-classifier.ts") — rule-based pre-classifier (<5ms) maps user messages to 18 intent categories with associated tool and section tags.
+2. **Knowledge Index** ("src/agents/knowledge-index.ts") — system prompt sections and tool definitions are split into "directory + content" chunks, stored in a registry with optional sqlite-vec persistence.
+3. **Knowledge Retriever** ("src/agents/knowledge-retriever.ts") — tag exact-match + vector similarity retrieval assembles only relevant chunks per turn.
+4. **Session Memory** ("src/agents/session-memory.ts") — tool results are split into "summary directory + full content cache" for efficient multi-turn context management.
+5. **knowledge_search tool** ("src/agents/knowledge-search-tool.ts") — LLM-callable fallback for knowledge not covered by the initial classifier.
+
+**Enable in openclaw.json:**
+```json
+{
+  "features": {
+    "dynamicPrompt": {
+      "enabled": true
+    }
+  }
+}
+```
+
+**Token savings:**
+
+| Scenario | Before | After | Savings |
+|----------|:------:|:-----:|:-------:|
+| Simple greeting | ~9,500 | ~800 | 92% |
+| File operations | ~9,500 | ~2,200 | 77% |
+| Shell commands | ~9,500 | ~2,800 | 71% |
+| Full feature use | ~9,500 | ~4,500 | 53% |
+
+Backward compatible — defaults to off, original buildAgentSystemPrompt() is untouched.
 
 ## Star History
 
