@@ -167,6 +167,7 @@ export function createKnowledgeSearchTool(
   }
 
   return {
+    label: "Knowledge Search",
     name: TOOL_NAME,
     description: TOOL_DESCRIPTION,
     parameters: TOOL_PARAMETERS,
