@@ -135,29 +135,35 @@ export function buildDynamicSystemPrompt(options: DynamicPromptOptions): string 
   const lines: string[] = [
     "You are a personal assistant running inside OpenClaw.",
     "",
-    "## Tooling",
-    "Tool availability (filtered by policy). Tool names are case-sensitive.",
+    "## Available Tools",
+    "Complete tool catalog (all names are case-sensitive).",
   ];
 
-  // 全工具名索引（轻量列表）
-  const toolIndexLines = toolNames
-    .filter((name) => {
-      // knowledge_search 始终包含
-      if (name === "knowledge_search") return true;
-      // classification 中的 toolTags 对应的工具优先展示描述
-      return classification.toolTags.includes(name.toLowerCase());
-    })
+  // 完整工具目录（仅名称+简述，按类别分组）
+  // 始终列出所有注册工具，让 agent 了解完整能力集
+  const allToolIndexLines = toolNames
     .map((name) => {
-      const summary = toolSummaryMap[name];
-      return summary ? `- ${name}: ${summary}` : `- ${name}`;
+      const summary = toolSummaryMap[name.toLowerCase()];
+      const shortSummary = summary
+        ? (summary.length > 80 ? summary.slice(0, 77) + "..." : summary)
+        : "";
+      return shortSummary ? `- ${name}: ${shortSummary}` : `- ${name}`;
     });
 
-  // 动态 Prompt 模式下不再列出"Other available tools"——
-  // 未匹配的工具已从 API tools 数组中过滤，LLM 无法调用它们，
-  // 列出反而浪费 token 并可能导致幻觉调用。
-  // 如需使用未列出的工具，可通过 knowledge_search 查询后在下轮调用。
+  if (allToolIndexLines.length > 0) {
+    lines.push(...allToolIndexLines);
+  }
 
-  lines.push(...toolIndexLines);
+  // 标注当前本轮可调用的工具（API tools 数组中实际传入的）
+  const callableToolNames = new Set(
+    toolNames.filter((name) => {
+      if (name === "knowledge_search" || name === "history_read") return true;
+      return classification.toolTags.includes(name.toLowerCase());
+    }),
+  );
+  if (callableToolNames.size > 0 && callableToolNames.size < toolNames.length) {
+    lines.push("", "Tools callable this turn: " + [...callableToolNames].join(", "));
+  }
   lines.push("");
 
   // ── Tool Call Style（始终包含，token 少） ──
