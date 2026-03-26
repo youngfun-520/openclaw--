@@ -77,7 +77,7 @@ const RULES: RuleEntry[] = [
       "读取", "查看", "显示", "打开", "看看", "浏览", "读一下", "看一下",
     ],
     patterns: [/what'?s?\s+in/i, /contents?\s+of/i, /look\s+at/i, /check\s+(the\s+)?file/i, /查看.*文件/i, /读.*文件/i, /看看.*内容/i, /打开.*文件/i],
-    toolTags: ["read", "grep", "find", "ls"],
+    toolTags: ["read"],
     sectionTags: [],
     priority: 80,
   },
@@ -267,7 +267,7 @@ const FAREWELL_KEYWORDS = [
 
 // ── 默认工具集（所有意图都包含的基础工具） ────────────────
 
-const BASE_TOOL_TAGS = ["read", "ls", "find", "grep"];
+const BASE_TOOL_TAGS = ["read", "edit"];
 const BASE_SECTION_TAGS: string[] = [];
 
 // ── 核心：classify 函数 ───────────────────────────────────
@@ -338,7 +338,7 @@ export function classifyIntent(userMessage: string): ClassificationResult {
   if (matches.length === 0) {
     return {
       intent: "generic_task",
-      toolTags: [...BASE_TOOL_TAGS, "exec", "write", "edit"],
+      toolTags: [...BASE_TOOL_TAGS, "exec", "write"],
       sectionTags: ["tooling", "tool_call_style"],
       confidence: 0.4,
     };
