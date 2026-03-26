@@ -293,6 +293,11 @@ export type AgentDefaultsConfig = {
   };
   /** Optional sandbox settings for non-main sessions. */
   sandbox?: AgentSandboxConfig;
+  /** History window management for token optimization. */
+  historyWindow?: {
+    enabled?: boolean;
+    keepRecentTurns?: number;
+  };
 };
 
 export type AgentCompactionMode = "default" | "safeguard";

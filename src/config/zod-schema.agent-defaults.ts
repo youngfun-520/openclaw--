@@ -193,6 +193,13 @@ export const AgentDefaultsSchema = z
       })
       .strict()
       .optional(),
+    historyWindow: z
+      .object({
+        enabled: z.boolean().optional().describe("Enable history window management (default: false)."),
+        keepRecentTurns: z.number().int().min(1).optional().describe("Number of recent turns to keep in context (default: 6)."),
+      })
+      .strict()
+      .optional(),
     sandbox: AgentSandboxSchema,
   })
   .strict()

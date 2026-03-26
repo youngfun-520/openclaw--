@@ -136,6 +136,9 @@ import {
 } from "../system-prompt.js";
 import { registerToolKnowledge } from "../../../agents/knowledge-index.js";
 import { isSimpleConversation } from "../../../agents/intent-classifier.js";
+import { HistoryArchiver } from "../../../agents/history-archiver.js";
+import { installHistoryWindowManager } from "../../../agents/history-window.js";
+import { createHistoryReadTool } from "../../../agents/history-read-tool.js";
 import { dropThinkingBlocks } from "../thinking.js";
 import { collectAllowedToolNames } from "../tool-name-allowlist.js";
 import { installToolResultContextGuard } from "../tool-result-context-guard.js";
@@ -2005,7 +2008,6 @@ export async function runEmbeddedAttempt(
     const dynamicPromptEnabled =
       params.config?.features?.dynamicPrompt?.enabled === true &&
       promptMode === "full";
-
     let dynamicClassification: import("../../intent-classifier.js").ClassificationResult | undefined;
     const appendPrompt = dynamicPromptEnabled
       ? (() => {
@@ -2111,6 +2113,7 @@ export async function runEmbeddedAttempt(
     let sessionManager: ReturnType<typeof guardSessionManager> | undefined;
     let session: Awaited<ReturnType<typeof createAgentSession>>["session"] | undefined;
     let removeToolResultContextGuard: (() => void) | undefined;
+    let removeHistoryWindowManager: (() => void) | undefined;
     try {
       await repairSessionFileIfNeeded({
         sessionFile: params.sessionFile,
@@ -2207,7 +2210,7 @@ export async function runEmbeddedAttempt(
 
       // ── 动态 Prompt：按意图过滤 tools 数组，减少 API prompt tokens ──
       const dynamicToolAllowlist = dynamicClassification
-        ? new Set([...dynamicClassification.toolTags, "knowledge_search"])
+        ? new Set([...dynamicClassification.toolTags, "knowledge_search", "history_read"])
         : null;
       const sdkTools = dynamicToolAllowlist
         ? effectiveTools.filter(
@@ -2224,6 +2227,19 @@ export async function runEmbeddedAttempt(
         sandboxEnabled: !!sandbox?.enabled,
       });
 
+      // ── 历史窗口管理：归档旧消息，按需加载 ──
+      const historyArchiver = new HistoryArchiver();
+      const historyWindowEnabled =
+        dynamicPromptEnabled &&
+        (params.config?.agents?.defaults?.historyWindow?.enabled === true);
+      const historyKeepRecentTurns =
+        (params.config?.agents?.defaults?.historyWindow?.keepRecentTurns as number) ?? 6;
+
+      // history_read 工具（始终可用）
+      const historyReadTool = createHistoryReadTool({
+        archiver: historyArchiver,
+        enabled: dynamicPromptEnabled,
+      });
       // Add client tools (OpenResponses hosted tools) to customTools
       let clientToolCallDetected: { name: string; params: Record<string, unknown> } | null = null;
       const clientToolLoopDetection = resolveToolLoopDetectionConfig({
@@ -2246,7 +2262,7 @@ export async function runEmbeddedAttempt(
           )
         : [];
 
-      const allCustomTools = [...customTools, ...clientToolDefs];
+      const allCustomTools = [...customTools, ...clientToolDefs, ...(historyReadTool ? [historyReadTool] : [])];
 
       ({ session } = await createAgentSession({
         cwd: resolvedWorkspace,
@@ -2281,6 +2297,15 @@ export async function runEmbeddedAttempt(
           ),
         ),
       });
+
+      // ── 历史窗口管理：在 transformContext 链上安装归档中间件 ──
+      if (historyWindowEnabled) {
+        removeHistoryWindowManager = installHistoryWindowManager({
+          agent: activeSession.agent,
+          archiver: historyArchiver,
+          config: { keepRecentTurns: historyKeepRecentTurns },
+        });
+      }
       const cacheTrace = createCacheTrace({
         cfg: params.config,
         env: process.env,
@@ -3286,6 +3311,7 @@ export async function runEmbeddedAttempt(
       // synthetic "missing tool result" errors and causing silent agent failures.
       // See: https://github.com/openclaw/openclaw/issues/8643
       removeToolResultContextGuard?.();
+      removeHistoryWindowManager?.();
       await flushPendingToolResultsAfterIdle({
         agent: session?.agent,
         sessionManager,
