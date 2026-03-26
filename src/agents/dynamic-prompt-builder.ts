@@ -152,13 +152,10 @@ export function buildDynamicSystemPrompt(options: DynamicPromptOptions): string 
       return summary ? `- ${name}: ${summary}` : `- ${name}`;
     });
 
-  // 其余工具只列名称
-  const otherTools = toolNames.filter(
-    (name) => name !== "knowledge_search" && !classification.toolTags.includes(name.toLowerCase()),
-  );
-  if (otherTools.length > 0) {
-    toolIndexLines.push(`Other available tools: ${otherTools.join(", ")}`);
-  }
+  // 动态 Prompt 模式下不再列出"Other available tools"——
+  // 未匹配的工具已从 API tools 数组中过滤，LLM 无法调用它们，
+  // 列出反而浪费 token 并可能导致幻觉调用。
+  // 如需使用未列出的工具，可通过 knowledge_search 查询后在下轮调用。
 
   lines.push(...toolIndexLines);
   lines.push("");
