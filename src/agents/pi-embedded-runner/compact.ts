@@ -109,6 +109,7 @@ import {
   buildEmbeddedDynamicSystemPrompt,
   createSystemPromptOverride,
 } from "./system-prompt.js";
+import { registerToolKnowledge } from "../../agents/knowledge-index.js";
 import { collectAllowedToolNames } from "./tool-name-allowlist.js";
 import { splitSdkTools } from "./tool-split.js";
 import type { EmbeddedPiCompactResult } from "./types.js";
@@ -843,6 +844,18 @@ export async function compactEmbeddedPiSessionDirect(
       ...(bundleMcpRuntime?.tools ?? []),
       ...(bundleLspRuntime?.tools ?? []),
     ];
+
+    // ── 动态 Prompt：注册工具知识到知识库 ──
+    if (params.config?.features?.dynamicPrompt?.enabled === true) {
+      registerToolKnowledge(
+        effectiveTools.map((t) => ({
+          name: t.name,
+          description: t.description ?? "",
+          parameters: (t.parameters as Record<string, unknown>) ?? {},
+        })),
+      );
+    }
+
     const allowedToolNames = collectAllowedToolNames({ tools: effectiveTools });
     logToolSchemasForGoogle({ tools: effectiveTools, provider });
     const machineName = await getMachineDisplayName();

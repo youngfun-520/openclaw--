@@ -134,6 +134,7 @@ import {
   buildEmbeddedDynamicSystemPrompt,
   createSystemPromptOverride,
 } from "../system-prompt.js";
+import { registerToolKnowledge } from "../../../agents/knowledge-index.js";
 import { isSimpleConversation } from "../../../agents/intent-classifier.js";
 import { dropThinkingBlocks } from "../thinking.js";
 import { collectAllowedToolNames } from "../tool-name-allowlist.js";
@@ -1866,6 +1867,18 @@ export async function runEmbeddedAttempt(
       ...(bundleMcpRuntime?.tools ?? []),
       ...(bundleLspRuntime?.tools ?? []),
     ];
+
+    // ── 动态 Prompt：注册工具知识到知识库 ──
+    if (params.config?.features?.dynamicPrompt?.enabled === true) {
+      registerToolKnowledge(
+        effectiveTools.map((t) => ({
+          name: t.name,
+          description: t.description ?? "",
+          parameters: (t.parameters as Record<string, unknown>) ?? {},
+        })),
+      );
+    }
+
     const allowedToolNames = collectAllowedToolNames({
       tools: effectiveTools,
       clientTools,
