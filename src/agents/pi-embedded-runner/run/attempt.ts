@@ -2006,34 +2006,39 @@ export async function runEmbeddedAttempt(
       params.config?.features?.dynamicPrompt?.enabled === true &&
       promptMode === "full";
 
+    let dynamicClassification: import("../../intent-classifier.js").ClassificationResult | undefined;
     const appendPrompt = dynamicPromptEnabled
-      ? buildEmbeddedDynamicSystemPrompt({
-          workspaceDir: effectiveWorkspace,
-          defaultThinkLevel: params.thinkLevel,
-          reasoningLevel: params.reasoningLevel ?? "off",
-          extraSystemPrompt: params.extraSystemPrompt,
-          ownerNumbers: params.ownerNumbers,
-          ownerDisplay: ownerDisplay.ownerDisplay,
-          ownerDisplaySecret: ownerDisplay.ownerDisplaySecret,
-          reasoningTagHint,
-          heartbeatPrompt,
-          skillsPrompt,
-          docsPath: docsPath ?? undefined,
-          ttsHint,
-          workspaceNotes,
-          acpEnabled: params.config?.acp?.enabled !== false,
-          runtimeInfo,
-          messageToolHints,
-          sandboxInfo,
-          tools: effectiveTools,
-          modelAliasLines: buildModelAliasLines(params.config),
-          userTimezone,
-          userTime,
-          userTimeFormat,
-          contextFiles,
-          memoryCitationsMode: params.config?.memory?.citations,
-          userMessage: params.prompt,
-        }).prompt
+      ? (() => {
+          const result = buildEmbeddedDynamicSystemPrompt({
+            workspaceDir: effectiveWorkspace,
+            defaultThinkLevel: params.thinkLevel,
+            reasoningLevel: params.reasoningLevel ?? "off",
+            extraSystemPrompt: params.extraSystemPrompt,
+            ownerNumbers: params.ownerNumbers,
+            ownerDisplay: ownerDisplay.ownerDisplay,
+            ownerDisplaySecret: ownerDisplay.ownerDisplaySecret,
+            reasoningTagHint,
+            heartbeatPrompt,
+            skillsPrompt,
+            docsPath: docsPath ?? undefined,
+            ttsHint,
+            workspaceNotes,
+            acpEnabled: params.config?.acp?.enabled !== false,
+            runtimeInfo,
+            messageToolHints,
+            sandboxInfo,
+            tools: effectiveTools,
+            modelAliasLines: buildModelAliasLines(params.config),
+            userTimezone,
+            userTime,
+            userTimeFormat,
+            contextFiles,
+            memoryCitationsMode: params.config?.memory?.citations,
+            userMessage: params.prompt,
+          });
+          dynamicClassification = result.classification;
+          return result.prompt;
+        })()
       : buildEmbeddedSystemPrompt({
           workspaceDir: effectiveWorkspace,
           defaultThinkLevel: params.thinkLevel,
@@ -2200,8 +2205,22 @@ export async function runEmbeddedAttempt(
       // Get hook runner early so it's available when creating tools
       const hookRunner = getGlobalHookRunner();
 
+      // ── 动态 Prompt：按意图过滤 tools 数组，减少 API prompt tokens ──
+      const dynamicToolAllowlist = dynamicClassification
+        ? new Set([...dynamicClassification.toolTags, "knowledge_search"])
+        : null;
+      const sdkTools = dynamicToolAllowlist
+        ? effectiveTools.filter(
+            (t) =>
+              dynamicToolAllowlist!.has(t.name) ||
+              // 始终保留 MCP/LSP 注入的工具（它们可能没有在意图规则中注册）
+              t.name.startsWith("mcp__") ||
+              t.name.startsWith("lsp__"),
+          )
+        : effectiveTools;
+
       const { builtInTools, customTools } = splitSdkTools({
-        tools: effectiveTools,
+        tools: sdkTools,
         sandboxEnabled: !!sandbox?.enabled,
       });
 
